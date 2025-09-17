@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Gerador de Imagem de Peça</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+  #formContainer {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    width: 420px;
+  }
+  input, button, textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 6px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  button {
+    background: #002D56;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  #preview {
+    width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    display: none;
+  }
+  canvas {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+
+<div id="formContainer">
+  <h2>Gerar Imagem da Peça</h2>
+  <input type="text" id="prefixo" placeholder="PREFIXO">
+  <input type="text" id="marca" placeholder="MARCA">
+  <input type="text" id="modelo" placeholder="MODELO">
+  <input type="text" id="ano" placeholder="ANO">
+  <input type="text" id="chassi" placeholder="CHASSI/NºSERIE">
+  <input type="text" id="referencia" placeholder="REFERENCIA">
+  <input type="text" id="urlProduto" placeholder="URL do Produto">
+
+  <!-- URL da imagem -->
+  <input type="text" id="urlImagem" placeholder="Cole a URL da imagem aqui e pressione Enter">
+  
+  <!-- Pré-visualização -->
+  <img id="preview" alt="Prévia da imagem">
+
+  <!-- Botões -->
+  <button onclick="gerarImagem()">Gerar Imagem</button>
+  <button onclick="copiarImagem()">Copiar Imagem</button>
+
+  <canvas id="canvas" width="600" height="500"></canvas>
+</div>
+
+<script>
+let imagemCarregada = null;
+
+// Carregar imagem via URL
+document.getElementById('urlImagem').addEventListener('change', function() {
+    const url = this.value;
+    if (url) {
+        const img = new Image();
+        img.crossOrigin = "anonymous"; // evita bloqueio CORS
+        img.onload = function() {
+            imagemCarregada = img;
+            const preview = document.getElementById('preview');
+            preview.src = url;
+            preview.style.display = "block";
+        }
+        img.src = url;
+    }
+});
+
+// Colar imagem direto (Ctrl+V)
+document.addEventListener('paste', function(e) {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+            const blob = items[i].getAsFile();
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    imagemCarregada = img;
+                    const preview = document.getElementById('preview');
+                    preview.src = event.target.result;
+                    preview.style.display = "block";
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(blob);
+        }
+    }
+});
+
+function gerarImagem() {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Fundo branco
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Cabeçalho
+    ctx.fillStyle = '#002D56';
+    ctx.fillRect(0, 0, canvas.width, 60);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 22px Arial';
+    ctx.fillText('Informações da Peça', 200, 38);
+
+    // Estilo de texto
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#000';
+
+    const prefixo = document.getElementById('prefixo').value;
+    const marca = document.getElementById('marca').value;
+    const modelo = document.getElementById('modelo').value;
+    const ano = document.getElementById('ano').value;
+    const chassi = document.getElementById('chassi').value;
+    const referencia = document.getElementById('referencia').value;
+    const urlProduto = document.getElementById('urlProduto').value;
+
+    ctx.fillText(`PREFIXO: ${prefixo}`, 20, 100);
+    ctx.fillText(`MARCA: ${marca}`, 20, 130);
+    ctx.fillText(`MODELO: ${modelo}`, 20, 160);
+    ctx.fillText(`ANO: ${ano}`, 20, 190);
+    ctx.fillText(`CHASSI/NºSERIE: ${chassi}`, 20, 220);
+    ctx.fillText(`REFERENCIA: ${referencia}`, 20, 250);
+    ctx.fillText(`LINK: ${urlProduto}`, 20, 280);
+
+    // Inserir imagem carregada
+    if (imagemCarregada) {
+        ctx.drawImage(imagemCarregada, 330, 90, 240, 240);
+    }
+}
+
+async function copiarImagem() {
+    const canvas = document.getElementById('canvas');
+    canvas.toBlob(async function(blob) {
+        try {
+            await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": blob })
+            ]);
+            alert("Imagem copiada! Agora é só colar no WhatsApp.");
+        } catch (err) {
+            alert("Erro ao copiar: " + err);
+        }
+    });
+}
+</script>
+
+</body>
+</html>
